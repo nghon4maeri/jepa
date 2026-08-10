@@ -1,0 +1,88 @@
+1
+00:00:03,600 --> 00:00:07,430
+To understand how an AI algorithm like V-JEPA perceives the
+
+2
+00:00:07,530 --> 00:00:10,893
+world, we must first shed our biological lens. For a
+
+3
+00:00:10,993 --> 00:00:14,357
+computer, an image has no shape or vivid emotion. It
+
+4
+00:00:14,457 --> 00:00:18,753
+is simply a two-dimensional grid of numbers representing the light
+
+5
+00:00:18,853 --> 00:00:22,484
+intensity of three color channels: Red, Green, and Blue.
+
+6
+00:00:22,533 --> 00:00:26,537
+A Tensor of shape H multiple W multiple 3.
+
+7
+00:00:27,400 --> 00:00:30,748
+And when we stack these still images along the time axis,
+
+8
+00:00:30,848 --> 00:00:35,224
+we get a video. A three-dimensional block representing the continuous flow
+
+9
+00:00:35,324 --> 00:00:38,733
+of visual information in the space T multiple H multiple W
+
+10
+00:00:38,833 --> 00:00:43,028
+multiple 3. But this very continuity creates an enormous challenge: How
+
+11
+00:00:43,128 --> 00:00:47,142
+can a computer understand the deep meaning of millions of constantly
+
+12
+00:00:47,242 --> 00:00:50,772
+changing numbers without being overwhelmed by noisy details?
+
+13
+00:00:52,133 --> 00:00:57,010
+The answer lies in a natural learning mechanism of our brain: Prediction. If
+
+14
+00:00:57,110 --> 00:01:01,136
+I cover most of this video block, your brain is not confused at
+
+15
+00:01:01,236 --> 00:01:05,523
+all. You still know which direction the dog is moving, how the ball
+
+16
+00:01:05,623 --> 00:01:10,173
+will bounce. You don't need to see every pixel to understand the world.
+
+17
+00:01:10,273 --> 00:01:13,513
+You only need to grasp the semantics of the motion.
+
+18
+00:01:14,666 --> 00:01:18,839
+That is exactly the philosophy of Self-Supervised Learning: learning by
+
+19
+00:01:18,939 --> 00:01:22,631
+filling in the blanks. This principle has fueled the resounding
+
+20
+00:01:22,731 --> 00:01:26,302
+success of large language models by predicting missing words.
+
+21
+00:01:26,400 --> 00:01:29,488
+But how do we apply this principle to video
+
+22
+00:01:29,588 --> 00:01:32,900
+most effectively? That is when we need V-JEPA.
+
