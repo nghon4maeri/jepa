@@ -190,7 +190,7 @@ Các act luôn được có các animation động minh hoạ thay vì chỉ là
 
 ### PHẦN 4.1: Chống rò rỉ thông tin thời gian trong video
 *   **Mô tả hoạt cảnh Manim:**
-    *   Quay lại khối video 3D chuyển động.
+    *   Quay lại khối video 3D chuyển động về một khung hình video chứa mặt hồ gợn sóng và một chiếc thuyền đang đi qua ở Phần 2.
     *   Mô tả kịch bản che khuất ngẫu nhiên (như trong ảnh tĩnh): Các ô vuông bị che rải rác trên từng khung hình độc lập. Manim vẽ các mũi tên màu xanh lá cây rực rỡ biểu thị luồng thông tin dễ dàng rò rỉ (leak) từ khung hình $t-1$ và $t+1$ sang khung hình $t$ bị che.
     *   Minh họa giải pháp **3D Multi-Block Masking**: Cắt các khối không gian lớn (blocks) và **kéo dài (lặp lại) chúng xuyên suốt toàn bộ chiều thời gian của video**, tạo ra các "đường hầm" bị che khuất hoàn toàn.
 *   **Kịch bản lời thoại (Voiceover):**

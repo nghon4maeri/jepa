@@ -1,0 +1,375 @@
+1
+00:00:00,100 --> 00:00:01,947
+Chapter Four builds the mask that makes
+
+2
+00:00:01,987 --> 00:00:04,510
+video prediction difficult:
+three-dimensional
+
+3
+00:00:04,550 --> 00:00:06,528
+multi-block masking.
+
+4
+00:00:07,166 --> 00:00:09,339
+If each frame receives an independent
+random
+
+5
+00:00:09,379 --> 00:00:13,051
+mask, video redundancy creates a shortcut.
+
+6
+00:00:13,091 --> 00:00:14,814
+A hidden location at time t may
+
+7
+00:00:14,854 --> 00:00:18,226
+remain visible immediately before or after
+it.
+
+8
+00:00:18,266 --> 00:00:20,451
+The model can copy nearby appearance
+instead
+
+9
+00:00:20,491 --> 00:00:23,201
+of learning scene structure or motion.
+
+10
+00:00:23,241 --> 00:00:25,351
+The arrows show this leakage path, not
+
+11
+00:00:25,391 --> 00:00:27,539
+a probability law: the missing token can
+
+12
+00:00:27,579 --> 00:00:29,626
+be inferred from the same spatial location
+
+13
+00:00:29,666 --> 00:00:31,762
+in adjacent frames.
+
+14
+00:00:32,433 --> 00:00:34,193
+A spatial block begins with area A
+
+15
+00:00:34,233 --> 00:00:36,168
+b, the floor of scale s times
+
+16
+00:00:36,208 --> 00:00:39,555
+the fourteen-by-fourteen lattice. Its
+aspect
+
+17
+00:00:39,595 --> 00:00:42,080
+ratio r is sampled between zero point
+
+18
+00:00:42,120 --> 00:00:44,943
+seven five and one point five.
+
+19
+00:00:44,983 --> 00:00:47,043
+The implementation computes height and
+width
+
+20
+00:00:47,083 --> 00:00:49,355
+with square roots, then rounds and clips
+
+21
+00:00:49,395 --> 00:00:50,980
+them to the grid.
+
+22
+00:00:51,020 --> 00:00:53,830
+Finally, integer coordinates u and v place
+
+23
+00:00:53,870 --> 00:00:57,080
+the continuous rectangle. Rounding means
+its
+
+24
+00:00:57,120 --> 00:00:59,105
+discrete area can differ slightly from the
+
+25
+00:00:59,145 --> 00:01:01,109
+requested scale.
+
+26
+00:01:01,766 --> 00:01:04,114
+Several possibly overlapping blocks form
+one
+
+27
+00:01:04,154 --> 00:01:06,501
+spatial mask by union.
+
+28
+00:01:06,541 --> 00:01:09,176
+Overlap is counted once, so union area
+
+29
+00:01:09,216 --> 00:01:11,801
+is not the sum of block areas.
+
+30
+00:01:11,841 --> 00:01:14,239
+V-JEPA then copies this same spatial mask
+
+31
+00:01:14,279 --> 00:01:16,576
+through every temporal token.
+
+32
+00:01:16,616 --> 00:01:19,401
+Mathematically, M is every time index
+crossed
+
+33
+00:01:19,441 --> 00:01:22,526
+with S. The temporal masking ratio is
+
+34
+00:01:22,566 --> 00:01:25,139
+therefore one hundred percent, producing
+continuous
+
+35
+00:01:25,179 --> 00:01:27,489
+masked tunnels and removing the
+adjacent-frame
+
+36
+00:01:27,529 --> 00:01:29,122
+shortcut.
+
+37
+00:01:29,766 --> 00:01:32,414
+The short-range mask unions eight smaller
+blocks,
+
+38
+00:01:32,454 --> 00:01:34,551
+each with spatial scale zero point one
+
+39
+00:01:34,591 --> 00:01:38,001
+five. As blocks arrive, the counter
+measures
+
+40
+00:01:38,041 --> 00:01:41,426
+the union, not eight times fifteen
+percent.
+
+41
+00:01:41,466 --> 00:01:44,614
+Overlapping cells are counted only once.
+
+42
+00:01:44,654 --> 00:01:46,801
+This sample reaches about eighty-nine
+percent
+
+43
+00:01:46,841 --> 00:01:49,126
+coverage, close to the roughly
+ninety-percent
+
+44
+00:01:49,166 --> 00:01:52,426
+training regime. Only a sparse blue
+context
+
+45
+00:01:52,466 --> 00:01:55,001
+remains, forcing the encoder to connect
+evidence
+
+46
+00:01:55,041 --> 00:01:57,746
+across many separated regions.
+
+47
+00:01:58,433 --> 00:02:00,768
+The complementary long-range mask unions
+two
+
+48
+00:02:00,808 --> 00:02:02,968
+much larger blocks of scale zero point
+
+49
+00:02:03,008 --> 00:02:06,180
+seven. Both default strategies leave
+roughly
+
+50
+00:02:06,220 --> 00:02:09,943
+ten percent context, but their geometry
+differs.
+
+51
+00:02:09,983 --> 00:02:12,930
+The ablations clarify what matters.
+
+52
+00:02:12,970 --> 00:02:15,193
+At fixed seventy-five-percent coverage,
+eight
+
+53
+00:02:15,233 --> 00:02:17,818
+smaller blocks score zero point five zero,
+
+54
+00:02:17,858 --> 00:02:19,943
+versus zero point four seven for one
+
+55
+00:02:19,983 --> 00:02:23,630
+large block. More importantly, at ninety
+percent
+
+56
+00:02:23,670 --> 00:02:26,093
+spatial coverage, reducing temporal
+coverage
+
+57
+00:02:26,133 --> 00:02:28,168
+from one hundred to seventy-five or fifty
+
+58
+00:02:28,208 --> 00:02:30,668
+percent drops accuracy from zero point
+five
+
+59
+00:02:30,708 --> 00:02:32,818
+zero to zero point two two and
+
+60
+00:02:32,858 --> 00:02:34,980
+zero point one two.
+
+61
+00:02:35,020 --> 00:02:37,933
+Weak coverage makes prediction trivial.
+
+62
+00:02:38,633 --> 00:02:41,255
+For one clip, V-JEPA samples both short
+
+63
+00:02:41,295 --> 00:02:44,118
+and long masks. The complete clip enters
+
+64
+00:02:44,158 --> 00:02:47,393
+the Target Encoder once, producing shared
+representation
+
+65
+00:02:47,433 --> 00:02:50,380
+s L. Each mask still requires its
+
+66
+00:02:50,420 --> 00:02:53,555
+own Context Encoder and Predictor pass.
+
+67
+00:02:53,595 --> 00:02:55,918
+Gather then selects the matching target
+positions
+
+68
+00:02:55,958 --> 00:02:59,143
+for each prediction. If target computation
+were
+
+69
+00:02:59,183 --> 00:03:01,118
+repeated, cost would be twice the sum
+
+70
+00:03:01,158 --> 00:03:03,318
+of all three branches.
+
+71
+00:03:03,358 --> 00:03:05,718
+Multi-mask keeps one target cost and two
+
+72
+00:03:05,758 --> 00:03:09,518
+context-predictor costs. This halves
+Target forward
+
+73
+00:03:09,558 --> 00:03:12,680
+passes, not total training compute.
+
+74
+00:03:12,720 --> 00:03:15,193
+In the paper's ablation, one, two, and
+
+75
+00:03:15,233 --> 00:03:17,930
+three masks score zero point five zero,
+
+76
+00:03:17,970 --> 00:03:20,505
+zero point five five, and zero point
+
+77
+00:03:20,545 --> 00:03:23,480
+five five, supporting two complementary
+masks
+
+78
+00:03:23,520 --> 00:03:25,213
+as the default.
+
+79
+00:03:25,900 --> 00:03:29,135
+Chapter Four leaves three precise ideas.
+
+80
+00:03:29,175 --> 00:03:31,510
+Spatial blocks are united, that union is
+
+81
+00:03:31,550 --> 00:03:33,835
+extruded through every time step, and two
+
+82
+00:03:33,875 --> 00:03:37,072
+masks share one Target Encoder result.
+
+83
+00:03:37,112 --> 00:03:39,185
+Roughly ninety percent is hidden while ten
+
+84
+00:03:39,225 --> 00:03:41,685
+percent remains as context.
+
+85
+00:03:41,725 --> 00:03:44,485
+Next, Chapter Five defines how predictions
+and
+
+86
+00:03:44,525 --> 00:03:47,112
+targets become a learning signal.
+

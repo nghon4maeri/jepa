@@ -1,0 +1,675 @@
+1
+00:00:03,450 --> 00:00:05,422
+Now that we know why V-JEPA predicts
+
+2
+00:00:05,462 --> 00:00:07,110
+in latent space, we can look at
+
+3
+00:00:07,150 --> 00:00:09,510
+the exact route through the model.
+
+4
+00:00:09,550 --> 00:00:11,785
+We reuse the established input shape
+without
+
+5
+00:00:11,825 --> 00:00:15,710
+re-explaining its axes. During
+pretraining, sample
+
+6
+00:00:15,750 --> 00:00:17,422
+n is taken from source frame f
+
+7
+00:00:17,462 --> 00:00:19,347
+zero plus four n, for n from
+
+8
+00:00:19,387 --> 00:00:22,772
+zero through fifteen. This temporal
+sampling
+
+9
+00:00:22,812 --> 00:00:24,385
+stride of four makes the clip cover
+
+10
+00:00:24,425 --> 00:00:27,047
+sixty-four source frames, roughly two
+seconds
+
+11
+00:00:27,087 --> 00:00:29,572
+at thirty frames per second.
+
+12
+00:00:29,612 --> 00:00:31,910
+The next operation turns this working
+block
+
+13
+00:00:31,950 --> 00:00:34,430
+into space-time tokens.
+
+14
+00:00:35,116 --> 00:00:38,951
+The first operation is a three-dimensional
+convolution.
+
+15
+00:00:38,991 --> 00:00:40,851
+A small filter with size two by
+
+16
+00:00:40,891 --> 00:00:43,276
+sixteen by sixteen scans through time and
+
+17
+00:00:43,316 --> 00:00:45,526
+space at the same time.
+
+18
+00:00:45,566 --> 00:00:47,589
+Its temporal stride is two, so it
+
+19
+00:00:47,629 --> 00:00:50,426
+advances through pairs of frames.
+
+20
+00:00:50,466 --> 00:00:52,889
+Its spatial stride is sixteen, so each
+
+21
+00:00:52,929 --> 00:00:56,451
+stop covers one sixteen by sixteen patch.
+
+22
+00:00:56,491 --> 00:00:59,189
+Every stop extracts a small space-time
+cube,
+
+23
+00:00:59,229 --> 00:01:00,864
+called a tubelet, and each of the
+
+24
+00:01:00,904 --> 00:01:03,539
+d convolutional filters contributes one
+output
+
+25
+00:01:03,579 --> 00:01:07,201
+channel. A tubelet spans two sampled
+instants,
+
+26
+00:01:07,241 --> 00:01:09,214
+so its feature can encode local temporal
+
+27
+00:01:09,254 --> 00:01:11,351
+evidence without claiming to reconstruct
+either
+
+28
+00:01:11,391 --> 00:01:14,639
+frame. Formally, the output length on each
+
+29
+00:01:14,679 --> 00:01:16,364
+axis is the floor of input size
+
+30
+00:01:16,404 --> 00:01:19,414
+minus kernel size, divided by stride, plus
+
+31
+00:01:19,454 --> 00:01:22,376
+one. That gives eight temporal positions
+and
+
+32
+00:01:22,416 --> 00:01:25,676
+fourteen positions on each spatial axis.
+
+33
+00:01:25,716 --> 00:01:28,314
+If tau at t, h, w denotes
+
+34
+00:01:28,354 --> 00:01:30,701
+the selected tubelet, its flattened values
+are
+
+35
+00:01:30,741 --> 00:01:32,914
+projected by W e and shifted by
+
+36
+00:01:32,954 --> 00:01:35,326
+b e to produce the d-dimensional feature
+
+37
+00:01:35,366 --> 00:01:37,440
+e at that position.
+
+38
+00:01:38,116 --> 00:01:40,076
+After the convolution has swept across the
+
+39
+00:01:40,116 --> 00:01:41,901
+clip, the result is not an image
+
+40
+00:01:41,941 --> 00:01:44,076
+and not a reconstruction.
+
+41
+00:01:44,116 --> 00:01:46,064
+It is a three-dimensional grid of feature
+
+42
+00:01:46,104 --> 00:01:49,389
+vectors. Sixteen frames become eight
+temporal
+
+43
+00:01:49,429 --> 00:01:52,776
+positions. Each two hundred and
+twenty-four pixel
+
+44
+00:01:52,816 --> 00:01:56,414
+spatial side becomes fourteen patch
+positions.
+
+45
+00:01:56,454 --> 00:01:57,826
+So the grid has shape eight by
+
+46
+00:01:57,866 --> 00:02:00,401
+fourteen by fourteen, and each cell
+carries
+
+47
+00:02:00,441 --> 00:02:02,989
+a d-dimensional feature vector.
+
+48
+00:02:03,029 --> 00:02:04,476
+We can write the complete grid as
+
+49
+00:02:04,516 --> 00:02:05,639
+G in R to the eight by
+
+50
+00:02:05,679 --> 00:02:08,489
+fourteen by fourteen by d.
+
+51
+00:02:08,529 --> 00:02:11,264
+A single indexed entry, G at t,
+
+52
+00:02:11,304 --> 00:02:13,939
+h, w, is therefore one vector in
+
+53
+00:02:13,979 --> 00:02:15,939
+R to d, rather than one scalar
+
+54
+00:02:15,979 --> 00:02:17,328
+value.
+
+55
+00:02:17,941 --> 00:02:20,401
+Before flattening, the paper adds an
+absolute
+
+56
+00:02:20,441 --> 00:02:22,614
+three-dimensional sin-cos positional
+embedding
+
+57
+00:02:22,654 --> 00:02:25,026
+to the space-time feature map.
+
+58
+00:02:25,066 --> 00:02:27,851
+For one coordinate u, frequencies omega k
+
+59
+00:02:27,891 --> 00:02:30,264
+form a geometric scale.
+
+60
+00:02:30,304 --> 00:02:33,976
+Sine and cosine values encode that
+coordinate.
+
+61
+00:02:34,016 --> 00:02:36,389
+The implementation constructs separate
+encodings
+
+62
+00:02:36,429 --> 00:02:39,476
+for time, height, and width, concatenates
+them,
+
+63
+00:02:39,516 --> 00:02:41,751
+and keeps d channels.
+
+64
+00:02:41,791 --> 00:02:43,839
+This is an important correction: the three
+
+65
+00:02:43,879 --> 00:02:46,664
+axis encodings are concatenated, not
+summed with
+
+66
+00:02:46,704 --> 00:02:49,664
+one another. The resulting vector p at
+
+67
+00:02:49,704 --> 00:02:52,351
+t, h, w is then added elementwise
+
+68
+00:02:52,391 --> 00:02:53,914
+to feature G at the same grid
+
+69
+00:02:53,954 --> 00:02:55,329
+position.
+
+70
+00:02:56,008 --> 00:02:57,793
+Now flatten the position-aware grid in a
+
+71
+00:02:57,833 --> 00:03:00,668
+fixed time, height, width order.
+
+72
+00:03:00,708 --> 00:03:02,555
+The sequence length L is T prime
+
+73
+00:03:02,595 --> 00:03:04,993
+times H prime times W prime: eight
+
+74
+00:03:05,033 --> 00:03:08,268
+times fourteen times fourteen, exactly one
+thousand
+
+75
+00:03:08,308 --> 00:03:10,580
+five hundred and sixty-eight.
+
+76
+00:03:10,620 --> 00:03:13,555
+Using one-based paper notation, grid
+coordinate
+
+77
+00:03:13,595 --> 00:03:16,093
+t, h, w maps to index ell
+
+78
+00:03:16,133 --> 00:03:18,118
+equal to one hundred and ninety-six t
+
+79
+00:03:18,158 --> 00:03:21,368
+plus fourteen h plus w plus one.
+
+80
+00:03:21,408 --> 00:03:22,968
+The result x L is an ordered
+
+81
+00:03:23,008 --> 00:03:25,205
+sequence from x one through x L,
+
+82
+00:03:25,245 --> 00:03:28,543
+and every row remains a d-dimensional
+token.
+
+83
+00:03:28,583 --> 00:03:31,793
+V-JEPA uses no class token during
+pretraining,
+
+84
+00:03:31,833 --> 00:03:33,955
+so these fifteen hundred and sixty-eight
+patch
+
+85
+00:03:33,995 --> 00:03:37,548
+tokens are the complete transformer input
+sequence.
+
+86
+00:03:38,208 --> 00:03:40,293
+The paper next separates the full sequence
+
+87
+00:03:40,333 --> 00:03:43,593
+into indexed roles. L is one thousand
+
+88
+00:03:43,633 --> 00:03:45,955
+five hundred and sixty-eight.
+
+89
+00:03:45,995 --> 00:03:47,793
+The masked indices are i one through
+
+90
+00:03:47,833 --> 00:03:49,930
+i M, while j one through j
+
+91
+00:03:49,970 --> 00:03:51,818
+N are their complement, with N equal
+
+92
+00:03:51,858 --> 00:03:53,755
+to L minus M.
+
+93
+00:03:53,795 --> 00:03:55,655
+Only x at the j indices enters
+
+94
+00:03:55,695 --> 00:03:58,380
+the Context Encoder as x N.
+
+95
+00:03:58,420 --> 00:04:00,818
+With the paper's masking settings, this
+visible
+
+96
+00:04:00,858 --> 00:04:02,518
+sequence is about ten percent of the
+
+97
+00:04:02,558 --> 00:04:04,955
+tokens, but Chapter Four handles how those
+
+98
+00:04:04,995 --> 00:04:08,343
+indices are sampled. For each requested
+index
+
+99
+00:04:08,383 --> 00:04:10,555
+i k, the Predictor receives a mask
+
+100
+00:04:10,595 --> 00:04:12,580
+token formed from a shared learnable
+vector
+
+101
+00:04:12,620 --> 00:04:14,693
+m plus the absolute position code p
+
+102
+00:04:14,733 --> 00:04:17,705
+at i k. No hidden pixel values
+
+103
+00:04:17,745 --> 00:04:19,892
+are passed along this route.
+
+104
+00:04:20,541 --> 00:04:22,651
+Now follow the three functions exactly as
+
+105
+00:04:22,691 --> 00:04:24,514
+written in the paper.
+
+106
+00:04:24,554 --> 00:04:26,851
+The blue Context Encoder receives only x
+
+107
+00:04:26,891 --> 00:04:28,614
+N and produces z N equal to
+
+108
+00:04:28,654 --> 00:04:30,739
+E theta of x N.
+
+109
+00:04:30,779 --> 00:04:32,989
+The gray Target Encoder receives the
+complete
+
+110
+00:04:33,029 --> 00:04:35,926
+sequence x L. It first produces the
+
+111
+00:04:35,966 --> 00:04:37,101
+full sequence s L.
+
+112
+00:04:37,141 --> 00:04:38,939
+Gather then selects the rows at masked
+
+113
+00:04:38,979 --> 00:04:41,026
+indices M to obtain s M; this
+
+114
+00:04:41,066 --> 00:04:42,889
+selection step was missing from the
+earlier
+
+115
+00:04:42,929 --> 00:04:46,376
+diagram. The red barrier marks
+stop-gradient
+
+116
+00:04:46,416 --> 00:04:48,326
+on this target route.
+
+117
+00:04:48,366 --> 00:04:50,739
+It blocks backward gradients, not the
+forward
+
+118
+00:04:50,779 --> 00:04:54,051
+target features. The orange Predictor
+receives
+
+119
+00:04:54,091 --> 00:04:56,301
+z N and the indexed mask-token sequence
+
+120
+00:04:56,341 --> 00:04:58,439
+m M, producing s hat at exactly
+
+121
+00:04:58,479 --> 00:05:00,614
+i one through i M.
+
+122
+00:05:00,654 --> 00:05:03,064
+The dashed connector pairs predictions
+with targets
+
+123
+00:05:03,104 --> 00:05:05,326
+carrying the same indices.
+
+124
+00:05:05,366 --> 00:05:06,776
+It is not a data arrow from
+
+125
+00:05:06,816 --> 00:05:09,593
+the Target Encoder into the Predictor.
+
+126
+00:05:10,274 --> 00:05:12,747
+The paper also specifies the networks
+behind
+
+127
+00:05:12,787 --> 00:05:15,997
+those symbols. Context and Target are
+matching
+
+128
+00:05:16,037 --> 00:05:19,234
+ViT-L or ViT-H backbones with joint
+space-time
+
+129
+00:05:19,274 --> 00:05:21,947
+attention, and the Target Encoder is
+initialized
+
+130
+00:05:21,987 --> 00:05:25,659
+identically to Context. The Predictor is
+deliberately
+
+131
+00:05:25,699 --> 00:05:28,122
+narrow: twelve transformer blocks with
+embedding
+
+132
+00:05:28,162 --> 00:05:30,309
+width three hundred and eighty-four, using
+the
+
+133
+00:05:30,349 --> 00:05:31,959
+same number of attention heads as its
+
+134
+00:05:31,999 --> 00:05:35,659
+backbone. Internally, a linear map Pi
+sends
+
+135
+00:05:35,699 --> 00:05:37,197
+z N from width d to width
+
+136
+00:05:37,237 --> 00:05:39,347
+three hundred and eighty-four.
+
+137
+00:05:39,387 --> 00:05:41,047
+The M mask tokens have that same
+
+138
+00:05:41,087 --> 00:05:44,847
+predictor width. Concatenation restores L
+positions
+
+139
+00:05:44,887 --> 00:05:48,472
+for self-attention. After twelve blocks,
+only
+
+140
+00:05:48,512 --> 00:05:50,209
+the M requested outputs are kept and
+
+141
+00:05:50,249 --> 00:05:52,597
+projected back to width d, producing s
+
+142
+00:05:52,637 --> 00:05:55,034
+hat M. Each s hat i k
+
+143
+00:05:55,074 --> 00:05:56,809
+pairs with target s i k.
+
+144
+00:05:56,849 --> 00:05:58,822
+Chapter Five will define the distance used
+
+145
+00:05:58,862 --> 00:06:00,622
+for those pairs.
+
+146
+00:06:01,341 --> 00:06:03,176
+So Chapter Three gives us the complete
+
+147
+00:06:03,216 --> 00:06:06,001
+data route: the clip becomes tubelets,
+tubelets
+
+148
+00:06:06,041 --> 00:06:08,564
+become fifteen hundred and sixty-eight
+tokens,
+
+149
+00:06:08,604 --> 00:06:11,364
+positional embeddings attach space-time
+identity,
+
+150
+00:06:11,404 --> 00:06:13,464
+and the three neural networks turn visible
+
+151
+00:06:13,504 --> 00:06:16,226
+context into latent predictions.
+
+152
+00:06:16,266 --> 00:06:18,426
+One question is now left open: which
+
+153
+00:06:18,466 --> 00:06:20,089
+tokens should be hidden so the task
+
+154
+00:06:20,129 --> 00:06:22,176
+is hard enough for video?
+
+155
+00:06:22,216 --> 00:06:24,689
+That is where three-dimensional
+multi-block masking
+
+156
+00:06:24,729 --> 00:06:26,225
+begins.
+

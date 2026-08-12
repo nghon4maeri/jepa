@@ -165,14 +165,14 @@ class Chapter1Scene(VoiceoverScene):
     # PART 1.1: The Visual World Through the Lens of Mathematics
     # ══════════════════════════════════════════════════════════════
     def part1_visual_world(self):
-        # ── Segment 1: Title + Grid background ──
+        # ── Segment 1: Title + grid background ──
         title = Text(
             "1", font_size=48, color=SOFT_WHITE,
-            font="sans-serif", weight=BOLD
+            font="sans-serif", weight=BOLD,
         ).move_to(UP * 1.2)
         subtitle = Text(
             "Images & Video from a Computer's Perspective",
-            font_size=28, color=DIM_GRAY, font="sans-serif"
+            font_size=28, color=DIM_GRAY, font="sans-serif",
         ).move_to(ORIGIN)
 
         grid = NumberPlane(
@@ -195,14 +195,60 @@ class Chapter1Scene(VoiceoverScene):
         self.wait(1.0)
         self.play(FadeOut(title), FadeOut(subtitle), run_time=0.8)
 
-        # ── Segment 2: Dog image + voiceover start ──
+        # ── Segment 2–4: [Dog image] -> [Pixel board] { R / G / B ──
         dog_img = ImageMobject(DOG_IMAGE_PATH)
-        dog_img.set_height(4.0)
-        dog_img.move_to(ORIGIN)
+        dog_img.set_height(2.8)
+        dog_img.move_to(LEFT * 4.7 + UP * 0.2)
 
-        # Border around image
         img_border = SurroundingRectangle(
-            dog_img, color=SOFT_WHITE, buff=0.05, stroke_width=1.5
+            dog_img, color=SOFT_WHITE, buff=0.05, stroke_width=1.5,
+        )
+        dog_group = Group(dog_img, img_border)
+
+        dog_label = Text(
+            "Dog image", font_size=18, color=DIM_GRAY,
+        ).next_to(dog_group, UP, buff=0.22)
+
+        # Bảng pixel nằm chính giữa khung hình.
+        pixel_grid = self._create_pixel_grid(rows=6, cols=8)
+        pixel_grid.scale_to_fit_height(2.8)
+        pixel_grid.move_to(LEFT * 0.65 + UP * 0.2)
+
+        pixel_label = Text(
+            "Pixel values (0–255)", font_size=18, color=DIM_GRAY,
+        ).next_to(pixel_grid, UP, buff=0.22)
+
+        image_to_pixel_arrow = Arrow(
+            start=dog_group.get_right(),
+            end=pixel_grid.get_left(),
+            buff=0.18,
+            color=SOFT_WHITE,
+            stroke_width=3,
+            max_tip_length_to_length_ratio=0.16,
+        )
+
+        # Ngoặc nhọn ở bên phải bảng pixel biểu thị mỗi pixel gồm 3 kênh màu.
+        rgb_brace = Brace(pixel_grid, direction=RIGHT, color=SOFT_WHITE, buff=0.12)
+
+        r_grid = self._create_channel_grid(6, 4, RED_CHANNEL, "R")
+        g_grid = self._create_channel_grid(6, 4, GREEN_CHANNEL, "G")
+        b_grid = self._create_channel_grid(6, 4, BLUE_CHANNEL, "B")
+
+        rgb_group = VGroup(r_grid, g_grid, b_grid)
+        rgb_group.arrange(DOWN, buff=0.16)
+        rgb_group.scale_to_fit_height(3.9)
+        rgb_group.move_to(RIGHT * 4.55 + UP * 0.2)
+
+        rgb_title = Text(
+            "RGB channels", font_size=18, color=DIM_GRAY,
+        ).next_to(rgb_group, UP, buff=0.18)
+
+        # Đường ngắn nối ngoặc nhọn với nhóm RGB.
+        brace_to_rgb = Line(
+            rgb_brace.get_right(),
+            rgb_group.get_left(),
+            color=SOFT_WHITE,
+            stroke_width=2,
         )
 
         with self.voiceover(
@@ -215,101 +261,75 @@ class Chapter1Scene(VoiceoverScene):
                 "Red, Green, and Blue."
             )
         ) as tracker:
-            # Show dog image
+            # 1) Ảnh chó xuất hiện ở center-left.
             self.play(
-                FadeIn(dog_img, scale=0.8, run_time=1.2),
-                Create(img_border, run_time=1.2),
+                FadeIn(dog_img, scale=0.85),
+                Create(img_border),
+                FadeIn(dog_label, shift=DOWN * 0.1),
+                run_time=1.1,
             )
-            self.wait(1.0)
+            self.wait(0.4)
 
-
-
-            # Shrink image to left side
+            # 2) Mũi tên dẫn tới bảng pixel ở giữa.
+            self.play(Create(image_to_pixel_arrow), run_time=0.7)
             self.play(
-                dog_img.animate.scale(0.6).to_edge(LEFT, buff=1.0),
-                img_border.animate.scale(0.6).to_edge(LEFT, buff=1.0),
+                FadeIn(pixel_grid, shift=RIGHT * 0.25),
+                FadeIn(pixel_label, shift=DOWN * 0.1),
                 run_time=1.0,
             )
+            self.wait(0.5)
 
-            # ── Segment 3: Pixel grid (zoomed-in view) ──
-            pixel_grid = self._create_pixel_grid(rows=6, cols=8)
-            pixel_grid.scale_to_fit_height(3.0)
-            pixel_grid.to_edge(RIGHT, buff=1.0)
-
-            arrow = Arrow(
-                start=dog_img.get_right(),
-                end=pixel_grid.get_left(),
-                buff=0.2,
-                color=SOFT_WHITE,
-            )
-
-            self.play(Create(arrow), run_time=0.8)
-
-            pixel_label = Text(
-                "Pixel Values (0–255)", font_size=20, color=DIM_GRAY
-            ).next_to(pixel_grid, UP, buff=0.3)
-
+            # 3) Giữ bảng pixel, mở ngoặc nhọn và lần lượt hiện R, G, B.
             self.play(
-                FadeIn(pixel_grid, shift=RIGHT * 0.3, run_time=1.0),
-                FadeIn(pixel_label, run_time=0.8),
-            )
-            self.wait(1.0)
-
-            self.play(FadeOut(arrow), run_time=0.8)
-
-            # ── Segment 4: Split into RGB channels ──
-
-            r_grid = self._create_channel_grid(6, 4, RED_CHANNEL, "R")
-            g_grid = self._create_channel_grid(6, 4, GREEN_CHANNEL, "G")
-            b_grid = self._create_channel_grid(6, 4, BLUE_CHANNEL, "B")
-            
-            arrow = Arrow(
-                start=dog_img.get_right(),
-                end=r_grid.get_left(),
-                buff=0.2,
-                color=SOFT_WHITE,
-            )
-            self.play(Create(arrow), run_time=0.8)
-
-
-            rgb_group = VGroup(r_grid, g_grid, b_grid).arrange(RIGHT, buff=0.5)
-            rgb_group.scale_to_fit_height(2.5)
-            rgb_group.move_to(RIGHT * 2.5)
-
-            self.play(
-                FadeOut(pixel_grid),
-                FadeOut(pixel_label),
-                FadeOut(arrow),
-                run_time=0.5,
+                GrowFromCenter(rgb_brace),
+                Create(brace_to_rgb),
+                run_time=0.7,
             )
             self.play(
-                FadeIn(rgb_group, shift=UP * 0.2, run_time=1.0),
+                LaggedStart(
+                    FadeIn(r_grid, shift=LEFT * 0.2),
+                    FadeIn(g_grid, shift=LEFT * 0.2),
+                    FadeIn(b_grid, shift=LEFT * 0.2),
+                    lag_ratio=0.25,
+                ),
+                FadeIn(rgb_title, shift=DOWN * 0.1),
+                run_time=1.5,
             )
+            self.wait(0.8)
 
-            # Wait for remaining voiceover duration
-            self.wait(1.0)
-
-        # ── Segment 5: Image Tensor formula ──
+        # ── Segment 5: Image tensor formula ──
         with self.voiceover(
-            text=(
-                "A Tensor of shape H multiple W multiple 3."
-            )
+            text="A tensor of shape H multiplied by W multiplied by 3."
         ) as tracker:
             formula_img = MathTex(
                 r"\text{Image}", r"\in", r"\mathbb{R}^{H \times W \times 3}",
-                font_size=40, color=SOFT_WHITE
+                font_size=36, color=SOFT_WHITE,
             )
-            formula_img.next_to(rgb_group, DOWN, buff=0.5)
+            formula_img.to_edge(DOWN, buff=0.35)
 
-            self.play(Write(formula_img, run_time=1.2))
-            self.wait(tracker.duration - 1.2 if tracker.duration > 1.2 else 0.5)
+            formula_note = Text(
+                "3 values per pixel = Red, Green, Blue",
+                font_size=15, color=DIM_GRAY,
+            ).next_to(formula_img, UP, buff=0.16)
 
-        # ── Cleanup for 3D transition ──
-        self.play(
-            FadeOut(dog_img), FadeOut(img_border),
-            FadeOut(rgb_group), FadeOut(formula_img),
-            run_time=0.8,
+            self.play(
+                Write(formula_img),
+                FadeIn(formula_note, shift=UP * 0.1),
+                run_time=1.2,
+            )
+            remaining = tracker.duration - 1.2
+            self.wait(remaining if remaining > 0 else 0.3)
+
+        # Dọn toàn bộ sơ đồ ảnh trước khi chuyển sang phần video.
+        image_diagram = Group(
+            dog_img, img_border, dog_label,
+            image_to_pixel_arrow,
+            pixel_grid, pixel_label,
+            rgb_brace, brace_to_rgb,
+            r_grid, g_grid, b_grid, rgb_title,
+            formula_img, formula_note,
         )
+        self.play(FadeOut(image_diagram), run_time=0.8)
 
         # ── Segment 6: Video = stacked frames along time axis ──
         with self.voiceover(
@@ -324,21 +344,18 @@ class Chapter1Scene(VoiceoverScene):
                 "without being overwhelmed by noisy details?"
             )
         ) as tracker:
-            # Create a series of "frame" rectangles stacked to simulate 3D
             video_block = self._create_video_3d_block()
             video_block.move_to(LEFT * 1.5)
 
             self.play(FadeIn(video_block, shift=UP * 0.3, run_time=1.2))
             self.wait(1.0)
 
-            # Time axis label
-            time_label = Text("Time", font_size=22, color=HIGHLIGHT_YELLOW)
-            time_label.next_to(video_block, DOWN + LEFT * 0.5, buff=0.3)
             time_arrow = Arrow(
                 start=video_block.get_corner(DL) + DOWN * 0.1,
                 end=video_block.get_corner(DL) + DOWN * 0.1 + LEFT * 1.5,
                 color=HIGHLIGHT_YELLOW, stroke_width=2, buff=0.1,
             )
+            time_label = Text("Time", font_size=22, color=HIGHLIGHT_YELLOW)
             time_label.next_to(time_arrow, DOWN, buff=0.15)
 
             h_label = Text("H", font_size=20, color=CONTEXT_BLUE)
@@ -351,28 +368,28 @@ class Chapter1Scene(VoiceoverScene):
             self.play(
                 Create(time_arrow, run_time=0.8),
                 FadeIn(time_label, run_time=0.6),
-                FadeIn(h_brace, run_time=0.6), FadeIn(h_label, run_time=0.6),
-                FadeIn(w_brace, run_time=0.6), FadeIn(w_label, run_time=0.6),
+                FadeIn(h_brace, run_time=0.6),
+                FadeIn(h_label, run_time=0.6),
+                FadeIn(w_brace, run_time=0.6),
+                FadeIn(w_label, run_time=0.6),
             )
             self.wait(1.0)
 
-            # Video tensor formula
             formula_video = MathTex(
                 r"\text{Video}", r"\in",
                 r"\mathbb{R}^{T \times H \times W \times 3}",
-                font_size=40, color=SOFT_WHITE
+                font_size=40, color=SOFT_WHITE,
             )
             formula_video.to_edge(RIGHT, buff=1.2)
 
             annotation = Text(
                 "T = frames, H×W = resolution, 3 = RGB",
-                font_size=16, color=DIM_GRAY
+                font_size=16, color=DIM_GRAY,
             ).next_to(formula_video, DOWN, buff=0.3)
 
             self.play(Write(formula_video, run_time=1.2))
             self.play(FadeIn(annotation, shift=UP * 0.1, run_time=0.8))
 
-            # Question mark to build tension
             self.wait(2.0)
             question = Text("?", font_size=80, color=HIGHLIGHT_YELLOW)
             question.move_to(RIGHT * 3 + UP * 1.5)
@@ -402,7 +419,7 @@ class Chapter1Scene(VoiceoverScene):
         )
         grid.set_z_index(-10)
         self.add(grid)
- 
+
         # ── Segment 1: Video block with masking ──
         with self.voiceover(
             text=(
@@ -766,7 +783,6 @@ class Chapter1Scene(VoiceoverScene):
             "V-JEPA", font_size=64, color=CONTEXT_BLUE,
             font="sans-serif", weight=BOLD,
         )
-        # Glow rectangle behind
         glow = Rectangle(
             width=logo_text.width + 0.8,
             height=logo_text.height + 0.5,

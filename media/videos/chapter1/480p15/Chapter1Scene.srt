@@ -19,70 +19,70 @@ is simply a two-dimensional grid of numbers representing the light
 intensity of three color channels: Red, Green, and Blue.
 
 6
-00:00:22,533 --> 00:00:26,537
-A Tensor of shape H multiple W multiple 3.
+00:00:22,533 --> 00:00:27,137
+A tensor of shape H multiplied by W multiplied by 3.
 
 7
-00:00:27,400 --> 00:00:30,748
+00:00:28,000 --> 00:00:31,348
 And when we stack these still images along the time axis,
 
 8
-00:00:30,848 --> 00:00:35,224
+00:00:31,448 --> 00:00:35,824
 we get a video. A three-dimensional block representing the continuous flow
 
 9
-00:00:35,324 --> 00:00:38,733
+00:00:35,924 --> 00:00:39,333
 of visual information in the space T multiple H multiple W
 
 10
-00:00:38,833 --> 00:00:43,028
+00:00:39,433 --> 00:00:43,628
 multiple 3. But this very continuity creates an enormous challenge: How
 
 11
-00:00:43,128 --> 00:00:47,142
+00:00:43,728 --> 00:00:47,742
 can a computer understand the deep meaning of millions of constantly
 
 12
-00:00:47,242 --> 00:00:50,772
+00:00:47,842 --> 00:00:51,372
 changing numbers without being overwhelmed by noisy details?
 
 13
-00:00:52,133 --> 00:00:57,010
+00:00:52,733 --> 00:00:57,610
 The answer lies in a natural learning mechanism of our brain: Prediction. If
 
 14
-00:00:57,110 --> 00:01:01,136
+00:00:57,710 --> 00:01:01,736
 I cover most of this video block, your brain is not confused at
 
 15
-00:01:01,236 --> 00:01:05,523
+00:01:01,836 --> 00:01:06,123
 all. You still know which direction the dog is moving, how the ball
 
 16
-00:01:05,623 --> 00:01:10,173
+00:01:06,223 --> 00:01:10,773
 will bounce. You don't need to see every pixel to understand the world.
 
 17
-00:01:10,273 --> 00:01:13,513
+00:01:10,873 --> 00:01:14,113
 You only need to grasp the semantics of the motion.
 
 18
-00:01:14,666 --> 00:01:18,839
+00:01:15,300 --> 00:01:19,473
 That is exactly the philosophy of Self-Supervised Learning: learning by
 
 19
-00:01:18,939 --> 00:01:22,631
+00:01:19,573 --> 00:01:23,264
 filling in the blanks. This principle has fueled the resounding
 
 20
-00:01:22,731 --> 00:01:26,302
+00:01:23,364 --> 00:01:26,936
 success of large language models by predicting missing words.
 
 21
-00:01:26,400 --> 00:01:29,488
+00:01:27,000 --> 00:01:30,088
 But how do we apply this principle to video
 
 22
-00:01:29,588 --> 00:01:32,900
+00:01:30,188 --> 00:01:33,500
 most effectively? That is when we need V-JEPA.
 

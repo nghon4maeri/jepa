@@ -116,7 +116,7 @@ class Chapter2Scene(VoiceoverScene):
         self.camera.background_color = BG_COLOR
         self.set_speech_service(
             GenericEdgeTTS(gender="male", accent="uk"),
-            create_subcaption=False,
+            create_subcaption=True,
         )
 
         # ── Subtitle tracking ──
@@ -444,21 +444,27 @@ class Chapter2Scene(VoiceoverScene):
             font_size=36, color=RED_CHANNEL,
         ).to_edge(UP, buff=0.4).set_z_index(20)
 
-        # Error bar
+        # Error bar components
         bar_bg = Rectangle(
             width=4, height=0.3,
             fill_color=DARK_RED, fill_opacity=0.3,
             stroke_color=DIM_GRAY, stroke_width=1,
-        ).to_corner(UR, buff=0.5).shift(DOWN * 1.2).set_z_index(20)
+        ).to_edge(UP, buff=0.5).shift(DOWN * 1.2).set_z_index(20)
+        
         bar_fill = Rectangle(
             width=0.2, height=0.25,
             fill_color=RED_CHANNEL, fill_opacity=0.8, stroke_width=0,
         ).align_to(bar_bg, LEFT).move_to(bar_bg, LEFT).shift(RIGHT * 0.05).set_z_index(21)
+
         bar_label = spaced_text(
             "Error", font_size=16, color=RED_CHANNEL, spacing=1.18,
         ).next_to(bar_bg, LEFT, buff=0.2).set_z_index(20)
 
-        self._error_bar_group = VGroup(bar_bg, bar_fill, bar_label, loss_eq)
+        # 🔑 Gom toàn bộ Error Bar thành 1 VGroup duy nhất
+        error_bar_unit = VGroup(bar_bg, bar_fill, bar_label)
+        
+        # 🔑 Gom Error Bar và Công thức vào_error_bar_group chung
+        self._error_bar_group = VGroup(error_bar_unit, loss_eq)
 
         voice_text = (
             "Forcing the model to precisely predict every random water ripple, "
@@ -483,7 +489,7 @@ class Chapter2Scene(VoiceoverScene):
             self.play(FadeIn(loss_eq, shift=DOWN * 0.3, run_time=_rt(dur, 0, 0.10)))
             # bar setup 0.10–0.18
             self.play(
-                FadeIn(bar_bg), FadeIn(bar_fill), FadeIn(bar_label),
+                FadeIn(error_bar_unit),
                 run_time=_rt(dur, 0.10, 0.18),
             )
 
@@ -519,15 +525,20 @@ class Chapter2Scene(VoiceoverScene):
         )
         self.play(FadeOut(scene_cleanup, run_time=0.6))
 
-        # 🔑 ANIMATE error bar to CENTER of screen & fill to max
+        # 🔑 ANIMATE cả cụm error_bar_unit và loss_eq cùng lúc thông qua VGroup
         self.play(
-            self._error_bar_group.animate.move_to(ORIGIN),
+            loss_eq.animate.move_to(UP * 0.4),
+            error_bar_unit.animate.move_to(DOWN * 1.2),
             run_time=1.4,
             rate_func=smooth,
         )
+        
+        # Fill bar chuẩn xát theo viền trong của bar_bg
         self.play(
-            bar_fill.animate.set_color(RED_CHANNEL).set_opacity(1.0),
-            run_time=0.4,
+            bar_fill.animate.stretch_to_fit_width(
+                bar_bg.width - 0.1, about_edge=LEFT
+            ).set_color(RED_CHANNEL).set_opacity(1.0),
+            run_time=0.6,
         )
         self.wait(0.08)
 
@@ -535,7 +546,7 @@ class Chapter2Scene(VoiceoverScene):
     # ACT 6: Pixel Conclusion — Error bar at center → ✗ (~12s)
     # ══════════════════════════════════════════════════════════════
     def act6_pixel_conclusion(self):
-        # Error bar is already at center from act 5
+        # Error bar is already centered from act 5, bar filled to max
 
         x_mark = spaced_text(
             "✗", font_size=140, color=RED_CHANNEL, spacing=1.0,
@@ -556,22 +567,27 @@ class Chapter2Scene(VoiceoverScene):
             self._track_subtitle(voice_text)
             dur = tracker.duration
 
-            # Pulse error bar 0–0.22
+            # Pulse error bar group 0–0.22
             self.play(
                 self._error_bar_group.animate.scale(1.15),
                 rate_func=there_and_back, run_time=_rt(dur, 0, 0.22),
             )
-            # ✗ grows from center 0.22–0.55
-            self.play(GrowFromCenter(x_mark, run_time=_rt(dur, 0.22, 0.55)))
-            # Wiggle ✗ 0.55–0.78
+
+            self.wait(0.3)
+
+            # Fade out error bar group, then show ✗  0.22–0.55
+            self.play(
+                FadeOut(self._error_bar_group, run_time=_rt(dur, 0.22, 0.38)),
+            )
+            self.play(GrowFromCenter(x_mark, run_time=_rt(dur, 0.38, 0.58)))
+            # Wiggle ✗ 0.58–0.78
             self.play(
                 Wiggle(x_mark, scale_value=1.1, rotation_angle=0.04 * TAU),
-                run_time=_rt(dur, 0.55, 0.78),
+                run_time=_rt(dur, 0.58, 0.78),
             )
-            # Label + fade error bar 0.78–1.0
+            # Label 0.78–0.95
             self.play(
-                FadeIn(label, shift=UP * 0.2, run_time=_rt(dur, 0.78, 0.90)),
-                FadeOut(self._error_bar_group, run_time=_rt(dur, 0.78, 0.90)),
+                FadeIn(label, shift=UP * 0.2, run_time=_rt(dur, 0.78, 0.92)),
             )
             self.wait(max(0.03, dur * 0.05))
 
@@ -704,26 +720,26 @@ class Chapter2Scene(VoiceoverScene):
         enc_formula.next_to(enc_title, DOWN, buff=0.1)
 
         # ── Gear ──
-        gear = VGroup()
-        gear_center = Dot(radius=0.08, color=PREDICTOR_ORANGE)
+        gear_center_pt = enc_box.get_corner(UR) + RIGHT * 0.4 + DOWN * 0.4
+        gear_center = Dot(gear_center_pt, radius=0.08, color=PREDICTOR_ORANGE)
         gear_teeth = VGroup()
         for i in range(8):
             angle = i * TAU / 8
             tooth = Rectangle(
-                width=0.05, height=0.12,
-                fill_color=PREDICTOR_ORANGE, fill_opacity=0.7, stroke_width=0,
-            )
-            tooth.move_to(
-                enc_box.get_top() + DOWN * 0.55
-                + RIGHT * 0.18 * np.cos(angle) + UP * 0.18 * np.sin(angle)
-            )
-            tooth.rotate(angle, about_point=tooth.get_center())
-            gear_teeth.add(tooth)
+            width=0.05, height=0.12,
+            fill_color=PREDICTOR_ORANGE, fill_opacity=0.7, stroke_width=0,
+        )
+        tooth.move_to(
+            gear_center_pt + RIGHT * 0.18 * np.cos(angle) + UP * 0.18 * np.sin(angle)
+        )
+        tooth.rotate(angle, about_point=tooth.get_center())
+        gear_teeth.add(tooth)
+        
         gear_ring = Circle(
             radius=0.16, color=PREDICTOR_ORANGE, stroke_width=1.5, fill_opacity=0,
-        ).move_to(enc_box.get_top() + DOWN * 0.55)
+        ).move_to(gear_center_pt)
+    
         gear = VGroup(gear_teeth, gear_ring, gear_center)
-        gear.move_to(enc_box.get_top() + DOWN * 0.55)
 
         # ── Internal layers ──
         layer_names = ["Conv3D", "Self-Attention", "LayerNorm", "Pooling"]
@@ -766,12 +782,18 @@ class Chapter2Scene(VoiceoverScene):
             fill_opacity=0.1, stroke_width=1, stroke_opacity=0.5,
         ).move_to(latent_dot)
         latent_label = spaced_text(
-            "z (Latent Vector)", font_size=15, color=HIGHLIGHT_YELLOW, spacing=1.18,
+            "Latent Representation", font_size=15, color=HIGHLIGHT_YELLOW, spacing=1.18,
         ).next_to(latent_dot, DOWN, buff=0.3)
+        latent_annotation = spaced_text(
+            "Encodes: Motion direction, Object type, Scene context...",
+            font_size=11, color=DIM_GRAY, spacing=1.14,
+        ).next_to(latent_label, DOWN, buff=0.12)
 
         # ── Connecting arrows ──
+        start_pt = thumb_group.get_right()
+        end_pt = np.array([enc_box.get_left()[0], start_pt[1], 0])
         in_arrow = Arrow(
-            thumb_group.get_right(), enc_box.get_left(),
+            start_pt, end_pt,
             color=SOFT_WHITE, stroke_width=3, buff=0.15,
         )
         out_arrow = Arrow(
@@ -782,7 +804,8 @@ class Chapter2Scene(VoiceoverScene):
         all_act8 = VGroup(
             thumb_group, enc_box, enc_title, enc_formula,
             gear, layers, layer_arrows, compress_bars,
-            in_arrow, out_arrow, latent_dot, latent_glow, latent_label,
+            in_arrow, out_arrow, latent_dot, latent_glow,
+            latent_label, latent_annotation,
         )
 
         voice_text = (
@@ -834,6 +857,7 @@ class Chapter2Scene(VoiceoverScene):
                 FadeIn(latent_dot, scale=0.3, run_time=_rt(dur, 0.76, 0.82)),
                 FadeIn(latent_glow, run_time=_rt(dur, 0.76, 0.82)),
                 FadeIn(latent_label, run_time=_rt(dur, 0.76, 0.82)),
+                FadeIn(latent_annotation, run_time=_rt(dur, 0.82, 0.88)),
             )
             # pulse latent dot 0.86–0.95
             self.play(
@@ -857,9 +881,9 @@ class Chapter2Scene(VoiceoverScene):
         # ── Axes ──
         axes = Axes(
             x_range=[-4, 4, 1], y_range=[-3, 3, 1],
-            x_length=10, y_length=5.5,
+            x_length=10, y_length=8,
             axis_config={"color": DIM_GRAY, "stroke_width": 2, "include_ticks": False},
-            tips=False,
+            tips=True,
         ).scale(0.72).move_to(DOWN * 0.2)
 
         x_label = spaced_text(
@@ -880,6 +904,31 @@ class Chapter2Scene(VoiceoverScene):
             (np.array([0.0, -1.6, 0]), ["Walking", "Running", "Jumping", "Dancing"], CLUSTER_ORANGE),
         ]
 
+        # Bố cục cố định cho các cụm có nhãn dài/dễ chồng chữ.
+        # Mỗi offset được tính tương đối so với tâm của vòng tròn.
+        cluster_layouts = {
+            "Boat": np.array([-0.42, 0.12, 0]),
+            "Ship": np.array([0.34, 0.10, 0]),
+            "Canoe": np.array([0.38, 0.62, 0]),
+            "Kayak": np.array([-0.20, -0.48, 0]),
+            "Walking": np.array([-0.45, 0.34, 0]),
+            "Running": np.array([-0.28, -0.48, 0]),
+            "Jumping": np.array([0.18, -0.12, 0]),
+            "Dancing": np.array([0.52, 0.26, 0]),
+        }
+
+        # Hướng đặt nhãn riêng cho từng điểm để nhãn không đè lên nhau.
+        label_directions = {
+            "Boat": LEFT,
+            "Ship": RIGHT,
+            "Canoe": DOWN,
+            "Kayak": DOWN,
+            "Walking": LEFT,
+            "Running": DOWN,
+            "Jumping": UP,
+            "Dancing": RIGHT,
+        }
+
         # ── Build thumbnails, scattered-entry dots, and final cluster objects ──
         all_thumbnails = VGroup()
         all_scattered_dots = VGroup()
@@ -893,14 +942,21 @@ class Chapter2Scene(VoiceoverScene):
             n = len(names)
             cluster_radius = 0.50 + 0.10 * n
 
-            # 🔑 RANDOM positions with minimum separation
-            final_positions = _scatter_points(rng, center, cluster_radius, n, min_sep=0.28)
+            # Blue/orange dùng bố cục cố định; các cụm còn lại vẫn rải ngẫu nhiên.
+            if all(name in cluster_layouts for name in names):
+                final_positions = [
+                    center + cluster_layouts[name] for name in names
+                ]
+            else:
+                final_positions = _scatter_points(
+                    rng, center, cluster_radius, n, min_sep=0.28,
+                )
             final_dots = VGroup()
             labels = VGroup()
 
             start_idx = dot_idx
             for i, (name, fpos) in enumerate(zip(names, final_positions)):
-                # Final dot at random position within cluster
+                # Final dot tại vị trí đã tính cho cụm
                 final_dot = Dot(fpos, radius=0.07, color=color)
                 final_dots.add(final_dot)
 
@@ -911,7 +967,8 @@ class Chapter2Scene(VoiceoverScene):
                 )
                 lbl.set_stroke(width=0)
                 lbl.set_fill(opacity=0.90)
-                lbl.next_to(final_dot, DOWN, buff=0.08)
+                label_direction = label_directions.get(name, DOWN)
+                lbl.next_to(final_dot, label_direction, buff=0.10)
                 lbl.set_opacity(0)
                 labels.add(lbl)
 
@@ -989,6 +1046,11 @@ class Chapter2Scene(VoiceoverScene):
                 FadeIn(x_label, run_time=_rt(dur, 0, 0.35, fill=0.25)),
                 FadeIn(y_label, run_time=_rt(dur, 0, 0.35, fill=0.25)),
             )
+            # 🔑 FadeOut axis labels to reduce visual clutter before thumbnails arrive
+            self.play(
+                FadeOut(x_label, run_time=_rt(dur, 0.32, 0.36, fill=0.50)),
+                FadeOut(y_label, run_time=_rt(dur, 0.32, 0.36, fill=0.50)),
+            )
 
             # ── Phase B1 (0.35–0.48): Thumbnails appear on left ──
             self.play(
@@ -1012,7 +1074,7 @@ class Chapter2Scene(VoiceoverScene):
                 run_time=_rt(dur, 0.48, 0.58),
             )
 
-            # ── Phase B3a (0.58–0.69): 🔑 Cluster 1 (Boat/Ship/Canoe/Kayak) — voice says "Boats, ships..." ──
+            # ── Phase B3a (0.55–0.68): 🔑 Cluster 1 (Boat/Ship/Canoe/Kayak) — voice says "Boats, ships..." ──
             cd0 = cluster_data[0]
             transforms_c1 = []
             for j in range(*cd0[7]):  # scattered indices
@@ -1022,11 +1084,11 @@ class Chapter2Scene(VoiceoverScene):
             transforms_c1.append(FadeIn(cd0[1], shift=DOWN * 0.08))
             transforms_c1.append(cd0[2].animate.set_stroke(opacity=0.45))
             self.play(
-                AnimationGroup(*transforms_c1, lag_ratio=0.06),
-                run_time=_rt(dur, 0.58, 0.69, fill=0.90),
+                AnimationGroup(*transforms_c1, lag_ratio=0.10),
+                run_time=_rt(dur, 0.55, 0.68, fill=0.95),
             )
 
-            # ── Phase B3b (0.69–0.78): 🔑 Cluster 2 (Tree/Forest/Leaf/Grass) — voice says "Trees, forests..." ──
+            # ── Phase B3b (0.68–0.80): 🔑 Cluster 2 (Tree/Forest/Leaf/Grass) — voice says "Trees, forests..." ──
             cd1 = cluster_data[1]
             transforms_c2 = []
             for j in range(*cd1[7]):
@@ -1036,11 +1098,11 @@ class Chapter2Scene(VoiceoverScene):
             transforms_c2.append(FadeIn(cd1[1], shift=DOWN * 0.08))
             transforms_c2.append(cd1[2].animate.set_stroke(opacity=0.45))
             self.play(
-                AnimationGroup(*transforms_c2, lag_ratio=0.06),
-                run_time=_rt(dur, 0.69, 0.78, fill=0.90),
+                AnimationGroup(*transforms_c2, lag_ratio=0.10),
+                run_time=_rt(dur, 0.68, 0.80, fill=0.95),
             )
 
-            # ── Phase B3c (0.78–0.87): 🔑 Cluster 3 (Walking/Running/Jumping/Dancing) — voice says "And actions..." ──
+            # ── Phase B3c (0.80–0.90): 🔑 Cluster 3 (Walking/Running/Jumping/Dancing) — voice says "And actions..." ──
             cd2 = cluster_data[2]
             transforms_c3 = []
             for j in range(*cd2[7]):
@@ -1050,8 +1112,8 @@ class Chapter2Scene(VoiceoverScene):
             transforms_c3.append(FadeIn(cd2[1], shift=DOWN * 0.08))
             transforms_c3.append(cd2[2].animate.set_stroke(opacity=0.45))
             self.play(
-                AnimationGroup(*transforms_c3, lag_ratio=0.06),
-                run_time=_rt(dur, 0.78, 0.87, fill=0.90),
+                AnimationGroup(*transforms_c3, lag_ratio=0.10),
+                run_time=_rt(dur, 0.80, 0.90, fill=0.95),
             )
 
             # ── Build persistent cluster reference ──
@@ -1064,9 +1126,16 @@ class Chapter2Scene(VoiceoverScene):
                 ))
             self._all_clusters_visual = all_cluster_visuals
             self._cluster_persist = VGroup(
-                axes, title, x_label, y_label, all_cluster_visuals,
+                axes, title, all_cluster_visuals,
             )
-            self._cluster_axes = VGroup(axes, title, x_label, y_label)
+            self._cluster_axes = VGroup(axes, title)
+
+            # 🔑 Store cluster configs for act10 rebuild (after FadeOut transition)
+            self._stored_cluster_configs = []
+            for cd in cluster_data:
+                final_dots, labels, enc_circle, center, color, cluster_radius, names, scattered_indices = cd
+                positions = [d.get_center() for d in final_dots]
+                self._stored_cluster_configs.append((positions, names, color, center, cluster_radius))
 
             # ── Phase C (0.87–0.98): Distance annotations ──
             boat_dots = cluster_data[0][0]
@@ -1107,16 +1176,76 @@ class Chapter2Scene(VoiceoverScene):
             self.play(FadeIn(sim_text, shift=UP * 0.15, run_time=phase_c_time * 0.20))
             self.wait(max(0.03, dur * 0.02))
 
-        # Remove distance annotations, KEEP clusters visible
-        self.play(FadeOut(self._distance_annotations, run_time=0.4))
-        # 🔑 NO cluster removal — clusters PERSIST
+        # Fade Out toàn bộ Act 9 trước khi chuyển sang Act 10.
+        # Dùng trực tiếp self.mobjects để không bỏ sót các phần tử đã được
+        # thêm riêng lẻ vào Scene (axes, dots, labels, circle, annotations...).
+        act9_mobjects = list(self.mobjects)
+        if act9_mobjects:
+            self.play(
+                *[FadeOut(mob) for mob in act9_mobjects],
+                run_time=0.7,
+            )
+
+        # Bảo đảm Scene hoàn toàn sạch, tránh hình Act 9 còn mờ phía sau Act 10.
+        self.clear()
+        self.wait(0.4)
 
     # ══════════════════════════════════════════════════════════════
     # ACT 10: Noise Filtering — VOICE SYNCED (~38s)
-    #   Clusters from act 9 remain visible
+    #   Rebuilds latent space view (act9 FadeOut → clean transition)
     # ══════════════════════════════════════════════════════════════
     def act10_noise_filter(self):
         rng = np.random.default_rng(123)
+
+        # ── 🔑 Rebuild latent space view (clean slate after act9 FadeOut) ──
+        if hasattr(self, '_stored_cluster_configs') and self._stored_cluster_configs:
+            axes = Axes(
+                x_range=[-4, 4, 1], y_range=[-3, 3, 1],
+                x_length=10, y_length=5.5,
+                axis_config={"color": DIM_GRAY, "stroke_width": 2, "include_ticks": False},
+                tips=True,
+            ).scale(0.72).move_to(DOWN * 0.2)
+
+            title = spaced_text(
+                "Latent Space", font_size=30, color=SOFT_WHITE, weight=BOLD, spacing=1.22,
+            ).to_edge(UP, buff=0.25)
+
+            all_cluster_visuals = VGroup()
+            self._cluster_circle_info = []
+            for positions, names, color, center, cluster_radius in self._stored_cluster_configs:
+                final_dots = VGroup()
+                labels = VGroup()
+                for pos, name in zip(positions, names):
+                    dot = Dot(pos, radius=0.07, color=color)
+                    final_dots.add(dot)
+                    lbl = spaced_text(
+                        name, font_size=13, color=color, weight=NORMAL,
+                        font="sans-serif", spacing=1.14,
+                    )
+                    lbl.set_stroke(width=0)
+                    lbl.set_fill(opacity=0.90)
+                    lbl.next_to(dot, DOWN, buff=0.08)
+                    labels.add(lbl)
+
+                enc_circle = DashedVMobject(
+                    Circle(
+                        radius=cluster_radius + 0.38, color=color, stroke_width=1.6,
+                    ).move_to(center),
+                    num_dashes=16,
+                )
+                enc_circle.set_stroke(opacity=0.45)
+
+                all_cluster_visuals.add(final_dots, labels, enc_circle)
+                self._cluster_circle_info.append((
+                    center, cluster_radius + 0.38, color, enc_circle,
+                ))
+
+            self._all_clusters_visual = all_cluster_visuals
+            self._cluster_persist = VGroup(axes, title, all_cluster_visuals)
+
+            # Brief pause to show clean screen, then show rebuilt view
+            self.wait(0.3)
+            self.play(FadeIn(self._cluster_persist, run_time=0.8))
 
         # ── Phase A: Scatter noise dots ──
         noise_names = [
@@ -1270,7 +1399,7 @@ class Chapter2Scene(VoiceoverScene):
             self.wait(max(0.02, dur * 0.02))
 
         self.play(FadeOut(pure_text, run_time=0.3))
-        # 🔑 NO cluster removal — clusters persist
+        # 🔑 Clusters persist (rebuilt at act10 start, used through act12)
 
     # ══════════════════════════════════════════════════════════════
     # ACT 11: Pure Semantic Vector & Comparison — VOICE SYNCED (~38s)

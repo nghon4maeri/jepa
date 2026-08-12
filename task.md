@@ -1,10 +1,9 @@
-# Task Checklist - Chapter 1 V-JEPA
+# Chapter 2 Improvements — Task List
 
-- `[ ]` Generate dog photo image asset
-- `[ ]` Write Chapter 1 Manim scene code (`visualizations/chapter1.py`)
-  - `[ ]` Part 1.1: Visual World (grid, image, pixel zoom, RGB channels, 3D video tensor)
-  - `[ ]` Part 1.2: Fill in the Blank (masking, prediction curve, SSL intro, NLP analogy, V-JEPA reveal)
-  - `[ ]` Voiceover integration with gTTS
-- `[ ]` Test static frame render (`-ql -s`)
-- `[ ]` Full render with voiceover (`-ql`)
-- `[ ]` Verify output video
+- [ ] 1. Act 8: Clarify latent vector label + add semantic annotation
+- [ ] 2. Act 9: Semantic Dim labels appear then FadeOut
+- [ ] 3. Act 9: Add arrowheads to axes (tips=True)
+- [ ] 4. Act 9: Slower cluster animations (wider windows, higher lag_ratio)
+- [ ] 5. Act 9→10: FadeOut all act9 content before act10
+- [ ] 6. Enable `create_subcaption=True` (burned-in subtitles) AND keep .srt export
+- [ ] 7. Render at 420p15 and verify
